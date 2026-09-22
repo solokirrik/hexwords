@@ -1,7 +1,7 @@
 <script lang="ts">
-    import { isHex } from "$lib/utils";
+    import { isHex } from "../utils";
 
-    export let color: string;
+    let { color = $bindable() }: { color: string } = $props();
 </script>
 
 <div>
@@ -13,7 +13,7 @@
     />
     <input
         value={isHex(color) ? color : "#000000"}
-        on:input={(e) => (color = e.currentTarget.value)}
+        oninput={(e) => (color = e.currentTarget.value)}
         type="color"
     />
 </div>

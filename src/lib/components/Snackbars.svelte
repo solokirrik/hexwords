@@ -12,7 +12,7 @@
             </span>
             {#if snack.closable}
                 <button
-                    on:click={() => {
+                    onclick={() => {
                         snacks.close(snack);
                     }}
                 >

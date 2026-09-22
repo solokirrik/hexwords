@@ -5,19 +5,19 @@
     import type { IHexWord } from "./lib/types";
     import wordsJson from "./lib/words/words.json";
     import Snackbars from "./lib/components/Snackbars.svelte";
-    let words: IHexWord[] = wordsJson;
-    let query: string = "";
-    let alpha: boolean = false;
-    let selectedColor: IHexWord = {
+    const words: IHexWord[] = wordsJson;
+    let query = $state("");
+    let alpha = $state(false);
+    let selectedColor: IHexWord = $state({
         background: "#ffffff",
         color: "black",
         hex: "#ffffff",
         score: 2,
         word: "default",
-    };
-    let queryColor: string = "";
-    let groupByHue: boolean = true;
-    let tileWidth: number = 8;
+    });
+    let queryColor = $state("");
+    let groupByHue = $state(true);
+    let tileWidth = $state(8);
 </script>
 
 <Snackbars />
@@ -29,7 +29,7 @@
         bind:search={query}
         bind:color={queryColor}
         bind:alpha
-        bind:selectedColor
+        {selectedColor}
         bind:groupByHue
         bind:tileWidth
     />

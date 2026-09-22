@@ -1,4 +1,4 @@
-import type { Snackbar } from "$lib/types";
+import type { Snackbar } from "../types";
 import { writable } from "svelte/store";
 
 function* getId(): Generator<number, number, unknown> {

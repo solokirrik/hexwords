@@ -1,14 +1,24 @@
 <script lang="ts">
-    import type { IHexWord } from "$lib/types";
+    import type { IHexWord } from "../types";
     import ColorPicker from "./ColorPicker.svelte";
     import Switch from "./Switch.svelte";
 
-    export let search: string;
-    export let alpha: boolean;
-    export let color: string;
-    export let selectedColor: IHexWord;
-    export let groupByHue: boolean;
-    export let tileWidth: number;
+    interface Props {
+        search: string;
+        alpha: boolean;
+        color: string;
+        selectedColor: IHexWord;
+        groupByHue: boolean;
+        tileWidth: number;
+    }
+    let {
+        search = $bindable(),
+        alpha = $bindable(),
+        color = $bindable(),
+        selectedColor,
+        groupByHue = $bindable(),
+        tileWidth = $bindable(),
+    }: Props = $props();
 </script>
 
 <h1><pre>#HEXWORDS</pre></h1>
