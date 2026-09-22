@@ -12,6 +12,9 @@
     export let thumbBg: string = "#fff";
 </script>
 
+<label for={id}>
+    {label}
+</label>
 <input
     class="switch"
     style:--size={size}
@@ -25,15 +28,8 @@
     type="checkbox"
     bind:checked
 />
-<label for={id}>
-    {label}
-</label>
 
 <style>
-    label {
-        display: flex;
-        gap: 1rem;
-    }
     .switch {
         appearance: none;
         margin: 0;

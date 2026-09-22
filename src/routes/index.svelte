@@ -16,6 +16,8 @@
         word: "default",
     };
     let queryColor: string = "";
+    let groupByHue: boolean = true;
+    let tileWidth: number = 8;
 </script>
 
 <Snackbars />
@@ -28,6 +30,8 @@
         bind:color={queryColor}
         bind:alpha
         bind:selectedColor
+        bind:groupByHue
+        bind:tileWidth
     />
     <HexWords
         {words}
@@ -35,6 +39,8 @@
         on:select={(e) => (selectedColor = e.detail)}
         {alpha}
         {queryColor}
+        {groupByHue}
+        {tileWidth}
     />
 </main>
 
