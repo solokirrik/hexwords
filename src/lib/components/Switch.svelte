@@ -23,7 +23,6 @@
     style:--thumb-bg={bg}
     style:--thumb-bg-active={activeBg}
     style:--thumb={thumbBg}
-    on:change
     {id}
     type="checkbox"
     bind:checked
