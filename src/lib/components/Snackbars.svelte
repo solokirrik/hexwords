@@ -2,12 +2,6 @@
     import { snacks } from "../stores/snackstores";
     import { fly } from "../transitions/fly";
     import close from "../../assets/close.svg";
-
-    const severityMapping = {
-        success: "check",
-        warning: "warning",
-        error: "error",
-    } as const;
 </script>
 
 <aside>
