@@ -1,7 +1,7 @@
 # #hexwords
 A small web app that lists hex colors which spell words, sorted by hue family and lightness.
 
-This is a fork of [paoloricciuti/hexwords](https://github.com/paoloricciuti/hexwords).
+This is a fork of [paoloricciuti/hexwords](https://github.com/paoloricciuti/hexwords), live at https://solokirrik.github.io/hexwords/.
 
 ## What's different in this fork
 
