@@ -40,6 +40,9 @@
     interface IGroup {
         name: string;
         words: IHexWord[];
+        // Set when words are in column-major order: the grid fills top to
+        // bottom, `rows` tiles per column.
+        rows?: number;
     }
 
     const namedColors: INamedColor = namedColorsJson;
@@ -153,29 +156,34 @@
     // to the end), with greys last since their hue is noise.
     const spectrumPosition = (c: IColored) =>
         c.family === "grey" ? Infinity : (c.hue - 10 + 360) % 360;
-    const bySpectrum = (a: IColored, b: IColored) =>
-        spectrumPosition(a) - spectrumPosition(b) || b.chroma - a.chroma;
 
     const flatList = (
         orderedWords: IHexWord[],
         keep: (word: IHexWord) => boolean
     ): IGroup[] => [{ name: "", words: orderedWords.filter(keep) }];
 
-    // All visible colors in one grid: lightness rows, hue across each row.
+    // All visible colors in one grid: the spectrum is cut into one equal hue
+    // slice per column, and each column runs light to dark.
     const spectrumLayout = (
         colors: IColored[],
         keep: (word: IHexWord) => boolean,
         columns: number
-    ): IGroup[] => [
-        {
-            name: "",
-            words: layoutRows(
-                colors.filter((c) => keep(c.word)),
-                columns,
-                bySpectrum
-            ),
-        },
-    ];
+    ): IGroup[] => {
+        const byHue = colors
+            .filter((c) => keep(c.word))
+            .sort((a, b) => spectrumPosition(a) - spectrumPosition(b));
+        const rows = Math.ceil(byHue.length / columns);
+        const words: IHexWord[] = [];
+        for (let i = 0; i < byHue.length; i += rows) {
+            words.push(
+                ...byHue
+                    .slice(i, i + rows)
+                    .sort((a, b) => b.lightness - a.lightness)
+                    .map((c) => c.word)
+            );
+        }
+        return [{ name: "", words, rows }];
+    };
 
     // Families holding the nearest matches: tiles nearest-first, and the family
     // holding the closest match first.
@@ -236,7 +244,11 @@
             {#if group.name}
                 <h3>{group.name}</h3>
             {/if}
-            <ul style:--tile-width="{tileWidth}rem">
+            <ul
+                style:--tile-width="{tileWidth}rem"
+                style:--rows={group.rows}
+                class:by-column={group.rows !== undefined}
+            >
                 {#each group.words as word (word.word)}
                     <li style:--color={word.background}>
                         <button
@@ -261,6 +273,10 @@
     }
     .measuring {
         visibility: hidden;
+    }
+    .by-column {
+        grid-template-rows: repeat(var(--rows), auto);
+        grid-auto-flow: column;
     }
     section {
         margin-bottom: 1rem;
