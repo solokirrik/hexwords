@@ -3,17 +3,14 @@ name: Deploy to GitHub Pages
 on:
     push:
         branches: [master]
+    pull_request:
+        branches: [master]
     workflow_dispatch:
 
 permissions:
     contents: read
     pages: write
     id-token: write
-
-# One deploy at a time; let a running one finish.
-concurrency:
-    group: pages
-    cancel-in-progress: false
 
 jobs:
     build:
@@ -28,12 +25,19 @@ jobs:
             - run: npm run check
             - run: npm run build
             - uses: actions/configure-pages@v6
+              if: github.event_name != 'pull_request'
             - uses: actions/upload-pages-artifact@v5
+              if: github.event_name != 'pull_request'
               with:
                   path: build
 
     deploy:
+        if: github.event_name != 'pull_request'
         needs: build
+        # One deploy at a time; let a running one finish.
+        concurrency:
+            group: pages
+            cancel-in-progress: false
         runs-on: ubuntu-latest
         environment:
             name: github-pages
