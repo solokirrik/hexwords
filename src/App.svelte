@@ -1,10 +1,10 @@
 <script lang="ts">
-    import Search from "../lib/components/Search.svelte";
+    import Search from "./lib/components/Search.svelte";
 
-    import HexWords from "../lib/components/HexWords.svelte";
-    import type { IHexWord } from "../lib/types";
-    import wordsJson from "../lib/words/words.json";
-    import Snackbars from "../lib/components/Snackbars.svelte";
+    import HexWords from "./lib/components/HexWords.svelte";
+    import type { IHexWord } from "./lib/types";
+    import wordsJson from "./lib/words/words.json";
+    import Snackbars from "./lib/components/Snackbars.svelte";
     let words: IHexWord[] = wordsJson;
     let query: string = "";
     let alpha: boolean = false;
@@ -36,7 +36,7 @@
     <HexWords
         {words}
         {query}
-        on:select={(e) => (selectedColor = e.detail)}
+        onselect={(word) => (selectedColor = word)}
         {alpha}
         {queryColor}
         {groupByHue}

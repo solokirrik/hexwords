@@ -1,5 +1,4 @@
 <script lang="ts">
-    import { createEventDispatcher } from "svelte";
     import type { INamedColor } from "../types";
     import namedColorsJson from "$lib/words/named-colors.json";
     import type { IHexWord } from "../types";
@@ -18,6 +17,7 @@
     export let queryColor: string;
     export let groupByHue: boolean = true;
     export let tileWidth: number = 8;
+    export let onselect: (word: IHexWord) => void = () => {};
 
     interface IColored {
         word: IHexWord;
@@ -33,15 +33,13 @@
     }
 
     const namedColors: INamedColor = namedColorsJson;
-    const dispatch = createEventDispatcher();
     const PROXIMITY_LIMIT = 60;
-    const remPx =
-        typeof window === "undefined"
-            ? 16
-            : parseFloat(getComputedStyle(document.documentElement).fontSize);
+    const remPx = parseFloat(
+        getComputedStyle(document.documentElement).fontSize
+    );
 
     const pick = (word: IHexWord) => {
-        dispatch("select", word);
+        onselect(word);
         navigator?.clipboard?.writeText(word.hex).then(() =>
             snacks.addSnack({
                 message: `Color ${word.hex} copied to clipboard`,
@@ -207,7 +205,7 @@
         : spectrumLayout(colors, isVisible, columns);
 </script>
 
-<!-- Rows depend on the measured width, which is unknown when prerendered;
+<!-- Rows depend on the measured width, which is unknown on the first render;
      stay hidden until it is, instead of flashing a one-column ordering. -->
 <div class="groups" class:measuring={width === 0} bind:clientWidth={width}>
     {#each groups as group (group.name)}

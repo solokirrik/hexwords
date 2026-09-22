@@ -79,7 +79,6 @@ const hueFamily = ([l, c, h]: Triple) => {
 
 export {
     isHex,
-    hexToRgb,
     hexToOklab,
     oklabToOklch,
     oklabDistance,
