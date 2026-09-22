@@ -23,12 +23,29 @@ const srgbToLinear = (c: number) => {
 
 type Triple = [number, number, number];
 
-// Returns [L, a, b] in OkLab. Alpha colors are composited over white first,
-// matching how the tiles are rendered.
+// sRGB 0–255 as displayed: alpha colors are composited over white, matching
+// how the tiles are rendered.
+const blendOverWhite = (hex: string): Triple => {
+    const [r, g, b, a] = hexToRgb(hex);
+    const alpha = a === undefined ? 1 : a / 255;
+    return [r, g, b].map((c) => c * alpha + 255 * (1 - alpha)) as Triple;
+};
+
+// Tile background and a readable text color on it: black when the WCAG
+// relative luminance is above 0.179, where black gives the better contrast.
+const tileColors = (hex: string) => {
+    const rgb = blendOverWhite(hex);
+    const [r, g, b] = rgb.map(srgbToLinear);
+    const luminance = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+    return {
+        background: hex.length === 5 || hex.length === 9 ? `rgb(${rgb.join(", ")})` : hex,
+        color: luminance > 0.179 ? "black" : "white",
+    };
+};
+
+// Returns [L, a, b] in OkLab, on the color as displayed.
 const hexToOklab = (hex: string): Triple => {
-    const [r0, g0, b0, a0] = hexToRgb(hex);
-    const alpha = a0 === undefined ? 1 : a0 / 255;
-    const [r, g, b] = [r0, g0, b0].map((c) => srgbToLinear(c * alpha + 255 * (1 - alpha)));
+    const [r, g, b] = blendOverWhite(hex).map(srgbToLinear);
     const l = Math.cbrt(0.4122214708 * r + 0.5363325363 * g + 0.0514459929 * b);
     const m = Math.cbrt(0.2119034982 * r + 0.6806995451 * g + 0.1073969566 * b);
     const s = Math.cbrt(0.0883024619 * r + 0.2817188376 * g + 0.6299787005 * b);
@@ -79,6 +96,7 @@ const hueFamily = ([l, c, h]: Triple) => {
 
 export {
     isHex,
+    tileColors,
     hexToOklab,
     oklabToOklch,
     oklabDistance,

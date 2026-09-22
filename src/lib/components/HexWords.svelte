@@ -1,7 +1,7 @@
 <script lang="ts">
     import type { IHexWord, INamedColor } from "../types";
     import namedColorsJson from "../words/named-colors.json";
-    import { snacks } from "../stores/snackstores";
+    import { snacks } from "../stores/snacks.svelte";
     import {
         FAMILY_ORDER,
         hexToOklab,
