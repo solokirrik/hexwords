@@ -1,20 +1,35 @@
-const isHex = (hex: string) => /^#?[0-9a-f]{3}[0-9a-f]?$/gi.test(hex) || /^#?[0-9a-f]{6}([0-9a-f]{2})?$/gi.test(hex);
+import type { INamedColor } from "../types";
+import namedColorsJson from "../words/named-colors.json";
 
+const namedColors: INamedColor = namedColorsJson;
+
+// 3, 4, 6 or 8 hex digits, with or without "#".
+const isHex = (hex: string) => /^#?([0-9a-f]{3,4}|[0-9a-f]{6}|[0-9a-f]{8})$/i.test(hex);
+
+// [r, g, b] 0–255, plus alpha 0–255 when the hex has one.
 const hexToRgb = (hex: string) => {
-    let [, r, rr, g, gg, b, bb, a, aa] = hex;
-    if (hex.length < 6) {
-        [, r, g, b, a] = hex;
-        rr = r;
-        gg = g;
-        bb = b;
-        aa = a;
-    }
-    const retval = [parseInt(`${r}${rr}`, 16), parseInt(`${g}${gg}`, 16), parseInt(`${b}${bb}`, 16)];
-    if (a && aa) {
-        retval.push(parseInt(`${a}${aa}`, 16));
-    }
-    return retval;
+    let digits = hex.replace(/^#/, "");
+    if (digits.length <= 4) digits = [...digits].map((d) => d + d).join("");
+    return digits.match(/../g)!.map((pair) => parseInt(pair, 16));
 };
+
+// A typed color, either a CSS color name or a hex code, as "#hex"; null if
+// it is neither.
+const resolveColor = (input: string) => {
+    const named = namedColors[input.toLowerCase()];
+    if (named) return named;
+    if (!isHex(input)) return null;
+    return input.startsWith("#") ? input : `#${input}`;
+};
+
+// <input type="color"> only accepts "#rrggbb", so short forms are expanded
+// and alpha is dropped.
+const toColorInputValue = (hex: string) =>
+    "#" +
+    hexToRgb(hex)
+        .slice(0, 3)
+        .map((c) => c.toString(16).padStart(2, "0"))
+        .join("");
 
 const srgbToLinear = (c: number) => {
     c /= 255;
@@ -23,12 +38,29 @@ const srgbToLinear = (c: number) => {
 
 type Triple = [number, number, number];
 
-// Returns [L, a, b] in OkLab. Alpha colors are composited over white first,
-// matching how the tiles are rendered.
+// sRGB 0–255 as displayed: alpha colors are composited over white, matching
+// how the tiles are rendered.
+const blendOverWhite = (hex: string): Triple => {
+    const [r, g, b, a] = hexToRgb(hex);
+    const alpha = a === undefined ? 1 : a / 255;
+    return [r, g, b].map((c) => c * alpha + 255 * (1 - alpha)) as Triple;
+};
+
+// Tile background and a readable text color on it: black when the WCAG
+// relative luminance is above 0.179, where black gives the better contrast.
+const tileColors = (hex: string) => {
+    const rgb = blendOverWhite(hex);
+    const [r, g, b] = rgb.map(srgbToLinear);
+    const luminance = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+    return {
+        background: hex.length === 5 || hex.length === 9 ? `rgb(${rgb.join(", ")})` : hex,
+        color: luminance > 0.179 ? "black" : "white",
+    };
+};
+
+// Returns [L, a, b] in OkLab, on the color as displayed.
 const hexToOklab = (hex: string): Triple => {
-    const [r0, g0, b0, a0] = hexToRgb(hex);
-    const alpha = a0 === undefined ? 1 : a0 / 255;
-    const [r, g, b] = [r0, g0, b0].map((c) => srgbToLinear(c * alpha + 255 * (1 - alpha)));
+    const [r, g, b] = blendOverWhite(hex).map(srgbToLinear);
     const l = Math.cbrt(0.4122214708 * r + 0.5363325363 * g + 0.0514459929 * b);
     const m = Math.cbrt(0.2119034982 * r + 0.6806995451 * g + 0.1073969566 * b);
     const s = Math.cbrt(0.0883024619 * r + 0.2817188376 * g + 0.6299787005 * b);
@@ -79,6 +111,9 @@ const hueFamily = ([l, c, h]: Triple) => {
 
 export {
     isHex,
+    resolveColor,
+    toColorInputValue,
+    tileColors,
     hexToOklab,
     oklabToOklch,
     oklabDistance,

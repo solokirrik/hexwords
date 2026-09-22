@@ -1,23 +1,32 @@
 <script lang="ts">
-    import type { INamedColor } from "../types";
-    import namedColorsJson from "$lib/words/named-colors.json";
     import type { IHexWord } from "../types";
-    import { snacks } from "../stores/snackstores";
+    import { snacks } from "../stores/snacks.svelte";
     import {
         FAMILY_ORDER,
         hexToOklab,
         hueFamily,
-        isHex,
         oklabDistance,
         oklabToOklch,
+        resolveColor,
     } from "../utils";
-    export let words: IHexWord[];
-    export let query: string = "";
-    export let alpha: boolean;
-    export let queryColor: string;
-    export let groupByHue: boolean = true;
-    export let tileWidth: number = 8;
-    export let onselect: (word: IHexWord) => void = () => {};
+    interface Props {
+        words: IHexWord[];
+        query?: string;
+        alpha: boolean;
+        queryColor: string;
+        groupByHue?: boolean;
+        tileWidth?: number;
+        onselect?: (word: IHexWord) => void;
+    }
+    let {
+        words,
+        query = "",
+        alpha,
+        queryColor,
+        groupByHue = true,
+        tileWidth = 8,
+        onselect = () => {},
+    }: Props = $props();
 
     interface IColored {
         word: IHexWord;
@@ -30,9 +39,11 @@
     interface IGroup {
         name: string;
         words: IHexWord[];
+        // Set when words are in column-major order: the grid fills top to
+        // bottom, `rows` tiles per column.
+        rows?: number;
     }
 
-    const namedColors: INamedColor = namedColorsJson;
     const PROXIMITY_LIMIT = 60;
     const remPx = parseFloat(
         getComputedStyle(document.documentElement).fontSize
@@ -50,59 +61,65 @@
     };
 
     // Color data for every word, computed once per word list.
-    $: colors = words.map((word): IColored => {
-        const lab = hexToOklab(word.hex);
-        const lch = oklabToOklch(lab);
-        return {
-            word,
-            lab,
-            family: hueFamily(lch),
-            lightness: lch[0],
-            chroma: lch[1],
-            hue: lch[2],
-        };
-    });
+    const colors = $derived(
+        words.map((word): IColored => {
+            const lab = hexToOklab(word.hex);
+            const lch = oklabToOklch(lab);
+            return {
+                word,
+                lab,
+                family: hueFamily(lch),
+                lightness: lch[0],
+                chroma: lch[1],
+                hue: lch[2],
+            };
+        })
+    );
 
     // Hue families, each sorted light to dark.
-    $: hueGroups = FAMILY_ORDER.map((name) => ({
-        name,
-        colors: colors
-            .filter((c) => c.family === name)
-            .sort((a, b) => b.lightness - a.lightness),
-    })).filter((group) => group.colors.length > 0);
+    const hueGroups = $derived(
+        FAMILY_ORDER.map((name) => ({
+            name,
+            colors: colors
+                .filter((c) => c.family === name)
+                .sort((a, b) => b.lightness - a.lightness),
+        })).filter((group) => group.colors.length > 0)
+    );
 
-    $: isVisible = (word: IHexWord) =>
+    // Plain functions are fine here: $derived tracks whatever they read
+    // (alpha, query, proximityRank) when it calls them.
+    const isVisible = (word: IHexWord) =>
         ((word.word.length !== 8 && word.word.length !== 4) || alpha) &&
         word.word.toLowerCase().includes(query.toLowerCase());
 
-    $: queryColorFinal =
-        namedColors[queryColor.toLowerCase()] ??
-        (queryColor.charAt(0) === "#" ? queryColor : `#${queryColor}`);
-    $: byProximity =
-        !!queryColor &&
-        (!!namedColors[queryColor.toLowerCase()] || isHex(queryColor));
+    const queryHex = $derived(resolveColor(queryColor));
+    const byProximity = $derived(queryHex !== null);
 
     // All words, nearest to the query color first.
-    $: orderedWords = byProximity
-        ? (() => {
-              const target = hexToOklab(queryColorFinal);
-              return colors
-                  .map((c) => ({ word: c.word, d: oklabDistance(c.lab, target) }))
-                  .sort((a, b) => a.d - b.d)
-                  .map(({ word }) => word);
-          })()
-        : words;
+    const orderedWords = $derived.by(() => {
+        if (queryHex === null) return words;
+        const target = hexToOklab(queryHex);
+        return colors
+            .map((c) => ({ word: c.word, d: oklabDistance(c.lab, target) }))
+            .sort((a, b) => a.d - b.d)
+            .map(({ word }) => word);
+    });
 
     // With a proximity color, only the nearest visible matches are shown.
-    $: proximityRank = new Map(
-        orderedWords
-            .filter(isVisible)
-            .slice(0, PROXIMITY_LIMIT)
-            .map((word, i) => [word, i])
+    const proximityRank = $derived(
+        new Map(
+            orderedWords
+                .filter(isVisible)
+                .slice(0, PROXIMITY_LIMIT)
+                .map((word, i) => [word, i])
+        )
     );
+    const isNear = (word: IHexWord) => proximityRank.has(word);
 
-    let width = 0;
-    $: columns = Math.max(1, Math.floor(width / (tileWidth * remPx)));
+    let width = $state(0);
+    const columns = $derived(
+        Math.max(1, Math.floor(width / (tileWidth * remPx)))
+    );
 
     // 2D layout: each grid row is one lightness step (light at the top), and
     // colors within a row are ordered by `compare`. Rows are cut to the actual
@@ -131,29 +148,34 @@
     // to the end), with greys last since their hue is noise.
     const spectrumPosition = (c: IColored) =>
         c.family === "grey" ? Infinity : (c.hue - 10 + 360) % 360;
-    const bySpectrum = (a: IColored, b: IColored) =>
-        spectrumPosition(a) - spectrumPosition(b) || b.chroma - a.chroma;
 
     const flatList = (
         orderedWords: IHexWord[],
         keep: (word: IHexWord) => boolean
     ): IGroup[] => [{ name: "", words: orderedWords.filter(keep) }];
 
-    // All visible colors in one grid: lightness rows, hue across each row.
+    // All visible colors in one grid: the spectrum is cut into one equal hue
+    // slice per column, and each column runs light to dark.
     const spectrumLayout = (
         colors: IColored[],
         keep: (word: IHexWord) => boolean,
         columns: number
-    ): IGroup[] => [
-        {
-            name: "",
-            words: layoutRows(
-                colors.filter((c) => keep(c.word)),
-                columns,
-                bySpectrum
-            ),
-        },
-    ];
+    ): IGroup[] => {
+        const byHue = colors
+            .filter((c) => keep(c.word))
+            .sort((a, b) => spectrumPosition(a) - spectrumPosition(b));
+        const rows = Math.ceil(byHue.length / columns);
+        const words: IHexWord[] = [];
+        for (let i = 0; i < byHue.length; i += rows) {
+            words.push(
+                ...byHue
+                    .slice(i, i + rows)
+                    .sort((a, b) => b.lightness - a.lightness)
+                    .map((c) => c.word)
+            );
+        }
+        return [{ name: "", words, rows }];
+    };
 
     // Families holding the nearest matches: tiles nearest-first, and the family
     // holding the closest match first.
@@ -195,14 +217,15 @@
             })
             .filter((group) => group.words.length > 0);
 
-    $: isNear = (word: IHexWord) => proximityRank.has(word);
-    $: groups = byProximity
-        ? groupByHue
-            ? proximityGroups(hueGroups, proximityRank)
-            : flatList(orderedWords, isNear)
-        : groupByHue
-        ? hueLayout(hueGroups, isVisible, columns)
-        : spectrumLayout(colors, isVisible, columns);
+    const groups = $derived(
+        byProximity
+            ? groupByHue
+                ? proximityGroups(hueGroups, proximityRank)
+                : flatList(orderedWords, isNear)
+            : groupByHue
+              ? hueLayout(hueGroups, isVisible, columns)
+              : spectrumLayout(colors, isVisible, columns)
+    );
 </script>
 
 <!-- Rows depend on the measured width, which is unknown on the first render;
@@ -213,12 +236,16 @@
             {#if group.name}
                 <h3>{group.name}</h3>
             {/if}
-            <ul style:--tile-width="{tileWidth}rem">
+            <ul
+                style:--tile-width="{tileWidth}rem"
+                style:--rows={group.rows}
+                class:by-column={group.rows !== undefined}
+            >
                 {#each group.words as word (word.word)}
                     <li style:--color={word.background}>
                         <button
                             style:color={word.color}
-                            on:click={() => pick(word)}
+                            onclick={() => pick(word)}
                         >
                             {word.hex}
                             <br />
@@ -238,6 +265,10 @@
     }
     .measuring {
         visibility: hidden;
+    }
+    .by-column {
+        grid-template-rows: repeat(var(--rows), auto);
+        grid-auto-flow: column;
     }
     section {
         margin-bottom: 1rem;

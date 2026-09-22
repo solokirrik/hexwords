@@ -1,15 +1,28 @@
 <script lang="ts">
     import type { Size } from "../types";
 
-    export let checked: boolean = false;
-    export let id: string = "";
-    export let label: string = "";
-    export let size: Size = "20px";
-    export let trackSize: Size;
-    export let margin: Size = "5px";
-    export let activeBg: string = "#22ee22";
-    export let bg: string = "#ddd";
-    export let thumbBg: string = "#fff";
+    interface Props {
+        checked?: boolean;
+        id?: string;
+        label?: string;
+        size?: Size;
+        trackSize: Size;
+        margin?: Size;
+        activeBg?: string;
+        bg?: string;
+        thumbBg?: string;
+    }
+    let {
+        checked = $bindable(false),
+        id = "",
+        label = "",
+        size = "20px",
+        trackSize,
+        margin = "5px",
+        activeBg = "#22ee22",
+        bg = "#ddd",
+        thumbBg = "#fff",
+    }: Props = $props();
 </script>
 
 <label for={id}>

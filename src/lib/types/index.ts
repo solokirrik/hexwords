@@ -1,7 +1,11 @@
-export interface IHexWord {
+// A word as stored in words.json.
+export interface IWordEntry {
     word: string;
     hex: string;
-    score: number;
+}
+
+// A word with its tile colors, computed at load time (see tileColors).
+export interface IHexWord extends IWordEntry {
     color: string;
     background: string;
 }

@@ -1,18 +1,18 @@
 <script lang="ts">
-    import { snacks } from "../stores/snackstores";
+    import { snacks } from "../stores/snacks.svelte";
     import { fly } from "svelte/transition";
     import close from "../../assets/close.svg";
 </script>
 
 <aside>
-    {#each $snacks as snack (snack.id)}
+    {#each snacks.items as snack (snack.id)}
         <div transition:fly={{ x: "100%" }}>
             <span>
                 {snack.message}
             </span>
             {#if snack.closable}
                 <button
-                    on:click={() => {
+                    onclick={() => {
                         snacks.close(snack);
                     }}
                 >

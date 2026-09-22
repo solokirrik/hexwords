@@ -5,17 +5,11 @@
         "module": "ESNext",
         "moduleResolution": "bundler",
         "resolveJsonModule": true,
-        "allowJs": true,
-        "checkJs": true,
         "strict": true,
         "skipLibCheck": true,
         "forceConsistentCasingInFileNames": true,
         "isolatedModules": true,
-        "noEmit": true,
-        "paths": {
-            "$lib": ["./src/lib"],
-            "$lib/*": ["./src/lib/*"]
-        }
+        "noEmit": true
     },
     "include": ["src/**/*.ts", "src/**/*.svelte", "vite.config.ts"]
 }
