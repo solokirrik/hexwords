@@ -1,7 +1,14 @@
 <script lang="ts">
-    import { isHex } from "../utils";
+    import { resolveColor, toColorInputValue } from "../utils";
 
     let { color = $bindable() }: { color: string } = $props();
+
+    // Follows whatever is typed: hex in any length, with or without "#", or a
+    // color name.
+    const swatch = $derived.by(() => {
+        const hex = resolveColor(color);
+        return hex === null ? "#000000" : toColorInputValue(hex);
+    });
 </script>
 
 <div>
@@ -12,7 +19,7 @@
         placeholder="order by proximity to..."
     />
     <input
-        value={isHex(color) ? color : "#000000"}
+        value={swatch}
         oninput={(e) => (color = e.currentTarget.value)}
         type="color"
     />

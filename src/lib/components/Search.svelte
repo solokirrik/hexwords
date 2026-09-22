@@ -21,7 +21,7 @@
     }: Props = $props();
 </script>
 
-<h1><pre>#HEXWORDS</pre></h1>
+<h1>#HEXWORDS</h1>
 <h2>Why bother with a random green when you can choose to be a #BADA55!</h2>
 <div class="credits">
     <a target="_blank" href="https://github.com/solokirrik">@solokirrik</a>
@@ -66,9 +66,6 @@
         font-weight: 100;
         max-width: 90vw;
         margin: auto;
-    }
-    pre {
-        margin: 0;
     }
     .credits {
         text-align: center;

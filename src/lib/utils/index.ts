@@ -1,20 +1,35 @@
-const isHex = (hex: string) => /^#?[0-9a-f]{3}[0-9a-f]?$/gi.test(hex) || /^#?[0-9a-f]{6}([0-9a-f]{2})?$/gi.test(hex);
+import type { INamedColor } from "../types";
+import namedColorsJson from "../words/named-colors.json";
 
+const namedColors: INamedColor = namedColorsJson;
+
+// 3, 4, 6 or 8 hex digits, with or without "#".
+const isHex = (hex: string) => /^#?([0-9a-f]{3,4}|[0-9a-f]{6}|[0-9a-f]{8})$/i.test(hex);
+
+// [r, g, b] 0–255, plus alpha 0–255 when the hex has one.
 const hexToRgb = (hex: string) => {
-    let [, r, rr, g, gg, b, bb, a, aa] = hex;
-    if (hex.length < 6) {
-        [, r, g, b, a] = hex;
-        rr = r;
-        gg = g;
-        bb = b;
-        aa = a;
-    }
-    const retval = [parseInt(`${r}${rr}`, 16), parseInt(`${g}${gg}`, 16), parseInt(`${b}${bb}`, 16)];
-    if (a && aa) {
-        retval.push(parseInt(`${a}${aa}`, 16));
-    }
-    return retval;
+    let digits = hex.replace(/^#/, "");
+    if (digits.length <= 4) digits = [...digits].map((d) => d + d).join("");
+    return digits.match(/../g)!.map((pair) => parseInt(pair, 16));
 };
+
+// A typed color, either a CSS color name or a hex code, as "#hex"; null if
+// it is neither.
+const resolveColor = (input: string) => {
+    const named = namedColors[input.toLowerCase()];
+    if (named) return named;
+    if (!isHex(input)) return null;
+    return input.startsWith("#") ? input : `#${input}`;
+};
+
+// <input type="color"> only accepts "#rrggbb", so short forms are expanded
+// and alpha is dropped.
+const toColorInputValue = (hex: string) =>
+    "#" +
+    hexToRgb(hex)
+        .slice(0, 3)
+        .map((c) => c.toString(16).padStart(2, "0"))
+        .join("");
 
 const srgbToLinear = (c: number) => {
     c /= 255;
@@ -96,6 +111,8 @@ const hueFamily = ([l, c, h]: Triple) => {
 
 export {
     isHex,
+    resolveColor,
+    toColorInputValue,
     tileColors,
     hexToOklab,
     oklabToOklch,

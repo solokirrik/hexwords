@@ -1,14 +1,13 @@
 <script lang="ts">
-    import type { IHexWord, INamedColor } from "../types";
-    import namedColorsJson from "../words/named-colors.json";
+    import type { IHexWord } from "../types";
     import { snacks } from "../stores/snacks.svelte";
     import {
         FAMILY_ORDER,
         hexToOklab,
         hueFamily,
-        isHex,
         oklabDistance,
         oklabToOklch,
+        resolveColor,
     } from "../utils";
     interface Props {
         words: IHexWord[];
@@ -45,7 +44,6 @@
         rows?: number;
     }
 
-    const namedColors: INamedColor = namedColorsJson;
     const PROXIMITY_LIMIT = 60;
     const remPx = parseFloat(
         getComputedStyle(document.documentElement).fontSize
@@ -94,19 +92,13 @@
         ((word.word.length !== 8 && word.word.length !== 4) || alpha) &&
         word.word.toLowerCase().includes(query.toLowerCase());
 
-    const queryColorFinal = $derived(
-        namedColors[queryColor.toLowerCase()] ??
-            (queryColor.charAt(0) === "#" ? queryColor : `#${queryColor}`)
-    );
-    const byProximity = $derived(
-        !!queryColor &&
-            (!!namedColors[queryColor.toLowerCase()] || isHex(queryColor))
-    );
+    const queryHex = $derived(resolveColor(queryColor));
+    const byProximity = $derived(queryHex !== null);
 
     // All words, nearest to the query color first.
     const orderedWords = $derived.by(() => {
-        if (!byProximity) return words;
-        const target = hexToOklab(queryColorFinal);
+        if (queryHex === null) return words;
+        const target = hexToOklab(queryHex);
         return colors
             .map((c) => ({ word: c.word, d: oklabDistance(c.lab, target) }))
             .sort((a, b) => a.d - b.d)
