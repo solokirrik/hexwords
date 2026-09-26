@@ -80,17 +80,18 @@
         position: sticky;
         top: 0;
         background-color: var(--selected-color);
-        padding-block: 1rem;
+        padding: 1rem;
         display: grid;
         justify-content: center;
         align-items: center;
         gap: 1rem;
-        grid-template-columns: max-content;
+        grid-template-columns: fit-content(100%);
         z-index: 10;
     }
     .view {
         grid-column: 1/-1;
         display: flex;
+        flex-wrap: wrap;
         justify-content: center;
         align-items: center;
         gap: 1rem;
@@ -101,7 +102,7 @@
         gap: 0.5rem;
     }
     input:not([type="checkbox"]):not([type="range"]) {
-        width: min(30rem, 50vw);
+        width: min(30rem, 100vw - 2rem);
         display: block;
         box-shadow: 0 0 0.3rem 0 rgba(0 0 0 / 0.3);
         outline: 0;
