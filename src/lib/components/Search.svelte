@@ -23,6 +23,10 @@
 
 <h1>#HEXWORDS</h1>
 <h2>Why bother with a random green when you can choose to be a #BADA55!</h2>
+<p class="intro">
+    1,500+ hex codes that spell words, sorted perceptually by hue (OkLCh). Click
+    a tile to copy it.
+</p>
 <div class="credits">
     <a target="_blank" href="https://github.com/solokirrik">@solokirrik</a>
 </div>
@@ -66,6 +70,12 @@
         font-weight: 100;
         max-width: 90vw;
         margin: auto;
+    }
+    .intro {
+        text-align: center;
+        font-weight: 100;
+        max-width: 90vw;
+        margin: 0.5rem auto 0;
     }
     .credits {
         text-align: center;

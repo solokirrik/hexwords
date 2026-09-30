@@ -45,6 +45,13 @@
         {groupByHue}
         {tileWidth}
     />
+    <footer>
+        Fork of <a
+            target="_blank"
+            href="https://github.com/paoloricciuti/hexwords"
+            >paoloricciuti/hexwords</a
+        >
+    </footer>
 </main>
 
 <style>
@@ -60,5 +67,14 @@
         width: 100%;
         min-height: 100vh;
         background-color: var(--selected-color, white);
+    }
+    footer {
+        text-align: center;
+        padding: 1rem;
+        font-size: 0.7rem;
+        opacity: 0.6;
+    }
+    footer > a {
+        color: inherit;
     }
 </style>
